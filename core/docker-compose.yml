@@ -1,0 +1,58 @@
+version: '3.9'
+
+networks: 
+  docker_bus:
+    external: true
+  web_bus:
+    external: true
+
+services: 
+    watchtower:
+        command: --label-enable --cleanup --interval 3600
+        image: containrrr/watchtower
+        labels:
+          - "com.centurylinklabs.watchtower.enable=true"
+        network_mode: none
+        restart: unless-stopped
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+    dockerproxy:
+        depends_on:
+            - watchtower
+        environment:
+            CONTAINERS: 1
+        image: tecnativa/docker-socket-proxy
+        labels:
+            - "com.centurylinklabs.watchtower.enable=true"
+        networks:
+            - docker_bus
+        ports:
+            - 2375
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+        restart: unless-stopped
+            
+    traefik:
+        depends_on:
+            - dockerproxy
+            - watchtower
+        env_file: .tf.env
+        image: traefik:2.0
+        labels:
+            - "com.centurylinklabs.watchtower.enable=true"
+            - "traefik.enable=true"
+            - "traefik.http.routers.dashboard.rule=PathPrefix(`/api`) || PathPrefix(`/dashboard`)"
+            - "traefik.http.routers.dashboard.entrypoints=dashboard"
+            - "traefik.http.routers.dashboard.service=api@internal"
+        networks:
+            - docker_bus
+            - web_bus
+        ports:
+            - 80:80
+            - 443:443
+            - 8082:8082
+        restart: unless-stopped
+        volumes:
+            - ./data/conf/traefik/acme:/etc/traefik/acme
+            - ./data/conf/traefik/traefik.yml:/traefik.yml
+            - ./data/volumes/traefik/tmp:/tmp

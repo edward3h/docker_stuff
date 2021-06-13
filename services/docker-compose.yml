@@ -1,0 +1,36 @@
+version: "3.9"
+networks: 
+    service_bus:
+      external: true
+  
+services: 
+
+    mariadb:
+        # depends_on:
+        #     - watchtower
+        env_file: 
+            - .mariadb.env    
+        command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+        image: mariadb:10
+        labels:
+            - "com.centurylinklabs.watchtower.enable=true"
+        networks:
+            - service_bus
+        ports:
+            - 3306:3306
+        restart: unless-stopped
+        volumes:
+            - /data2/volumes/mariadb:/var/lib/mysql
+    
+    redis:
+        # depends_on:
+        #     - watchtower
+        image: redis:5
+        labels:
+            - "com.centurylinklabs.watchtower.enable=true"
+        networks:
+            - service_bus
+        restart: unless-stopped
+        volumes:
+            - /data2/volumes/redis:/data
+

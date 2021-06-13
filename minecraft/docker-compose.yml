@@ -1,0 +1,38 @@
+version: "3.9"
+services: 
+    minecraft1:
+        image: itzg/minecraft-bedrock-server
+        container_name: minecraft1
+        restart: "unless-stopped"
+        environment:
+          EULA: "TRUE"
+          SERVER_NAME: "mc.ethelred.org"
+          GAMEMODE: "survival"
+          DIFFICULTY: "hard"
+          LEVEL_NAME: "Glow with pride"
+          UID: 1000
+          GID: 998
+          VERSION: LATEST
+        ports:
+          - 19132:19132/udp
+        volumes:
+          - "${MC_HOME}/1:/data"
+        stdin_open: true
+        tty: true
+
+    backup:
+        image: kaiede/minecraft-bedrock-backup
+        container_name: backup
+        restart: "unless-stopped"
+        depends_on:
+            - "minecraft1"
+        environment:
+            DEBUG: "true"
+            BACKUP_INTERVAL: "6h"
+            TZ: "America/New_York"
+            UID: 1000
+            GID: 998
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - "${BACKUP_DIR:?err}:/backups"
+            - "${MC_HOME}/1:/minecraft1"

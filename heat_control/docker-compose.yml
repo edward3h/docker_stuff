@@ -1,0 +1,46 @@
+version: "3.9"
+
+networks: 
+    # service_bus:
+    #   external: true
+    web_bus:
+      external: true
+
+services: 
+  kumojs:
+    build:
+      context: ./kumojs
+    restart: "unless-stopped"
+    networks: 
+      - web_bus
+    volumes: 
+      - "./kumo.cfg:/kumo.cfg"
+    ports: 
+      - 8084:8084
+    labels: 
+      - "traefik.enable=true"
+      - "traefik.docker.network=web_bus"
+      - "traefik.http.routers.kumojs.entrypoints=web"
+      - "traefik.http.routers.kumojs.rule=PathPrefix(`/heat/v0`) && Host(`eternal.local`, `eternal`)"
+      - "traefik.http.middlewares.stripheat.stripprefix.prefixes=/heat"
+      - "traefik.http.routers.kumojs.middlewares=stripheat"
+      - "traefik.http.routers.kumojs.priority=1000"
+
+  kumoclient:
+    build: 
+      context: ./kumoclient
+    restart: "unless-stopped"
+    depends_on: 
+      - kumojs
+    networks: 
+      - web_bus
+    ports: 
+      - 8085:5000
+    labels: 
+      - "traefik.enable=true"
+      - "traefik.docker.network=web_bus"
+      - "traefik.http.routers.kumoclient.entrypoints=web"
+      - "traefik.http.routers.kumoclient.rule=PathPrefix(`/heat`) && Host(`eternal.local`, `eternal`)"
+      - "traefik.http.middlewares.stripheat.stripprefix.prefixes=/heat"
+      - "traefik.http.routers.kumoclient.middlewares=stripheat"      
+      - "traefik.http.routers.kumoclient.priority=100"

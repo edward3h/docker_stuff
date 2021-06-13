@@ -1,0 +1,61 @@
+version: "3.9"
+
+networks: 
+    service_bus:
+      external: true
+    web_bus:
+      external: true
+  
+services: 
+    nextcloud:
+        # depends_on:
+        #     - mariadb
+        #     - redis
+        #     - traefik
+        #     - watchtower
+        image: nextcloud:21-apache
+        environment:
+            - MYSQL_HOST=db
+            - REDIS_HOST=redis
+            - "TRUSTED_PROXIES=172.22.0.0/16" # web_bus subnet
+        env_file:
+            - mail.env
+            # - store.env
+        labels:
+            - "traefik.enable=true"
+            - "traefik.docker.network=web_bus"
+            - "traefik.http.middlewares.nextcloud-caldav.redirectregex.permanent=true"
+            - "traefik.http.middlewares.nextcloud-caldav.redirectregex.regex=^https://(.*)/.well-known/(card|cal)dav"
+            - "traefik.http.middlewares.nextcloud-caldav.redirectregex.replacement=https://$${1}/remote.php/dav/"
+            - "traefik.http.middlewares.nextcloud-https.redirectscheme.scheme=https"
+            - "traefik.http.routers.nextcloud-http.entrypoints=web"
+            - "traefik.http.routers.nextcloud-http.rule=Host(`cloud.ethelred.org`)"
+            - "traefik.http.routers.nextcloud-http.middlewares=nextcloud-https@docker"
+            - "traefik.http.routers.nextcloud.entrypoints=web-secure"
+            - "traefik.http.routers.nextcloud.rule=Host(`cloud.ethelred.org`)"
+            - "traefik.http.routers.nextcloud.middlewares=nextcloud-caldav@docker"
+            - "traefik.http.routers.nextcloud.tls=true"
+            - "traefik.http.routers.nextcloud.tls.certresolver=default"
+            - "com.centurylinklabs.watchtower.enable=true"
+        networks:
+            - service_bus
+            - web_bus
+        restart: unless-stopped
+        volumes:
+            - /data2/volumes/nextcloud/html:/var/www/html
+
+    cron:
+        image: rcdailey/nextcloud-cronjob
+        labels:
+          - "com.centurylinklabs.watchtower.enable=true"
+        restart: unless-stopped
+        network_mode: none
+        depends_on:
+            - nextcloud
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - NEXTCLOUD_CONTAINER_NAME=nextcloud
+            - NEXTCLOUD_PROJECT_NAME=nextcloud
+            - NEXTCLOUD_CRON_MINUTE_INTERVAL=5

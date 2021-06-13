@@ -1,0 +1,9 @@
+core/.tf.env
+heat_control/kumo.cfg
+heat_control/kumoclient/.env
+minecraft/.env
+minecraft/config.json
+nextcloud/.env
+nextcloud/mail.env
+nextcloud/store.env
+services/.mariadb.env
