@@ -7,6 +7,6 @@ docker_bus - dockerproxy and containers which need to use it
 service_bus - common services e.g. mariadb, redis, and containers which use them
 web_bus - web apps etc., traefik to proxy them
 
-docker network create docker_bus --internal
-docker network create service_bus --internal
-docker network create web_bus
+    docker network create docker_bus --internal
+    docker network create service_bus --internal
+    docker network create web_bus
