@@ -7,3 +7,4 @@ nextcloud/.env
 nextcloud/mail.env
 nextcloud/store.env
 services/.mariadb.env
+core/data/conf/traefik/acme/acme.json

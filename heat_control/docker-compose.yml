@@ -42,5 +42,9 @@ services:
       - "traefik.http.routers.kumoclient.entrypoints=web"
       - "traefik.http.routers.kumoclient.rule=PathPrefix(`/heat`) && Host(`eternal.local`, `eternal`)"
       - "traefik.http.middlewares.stripheat.stripprefix.prefixes=/heat"
-      - "traefik.http.routers.kumoclient.middlewares=stripheat"      
+      - "traefik.http.routers.kumoclient.middlewares=slash-step1,stripheat"      
       - "traefik.http.routers.kumoclient.priority=100"
+      # slash_step1 + slash_step2 | Add missing trailing slash
+      - "traefik.http.middlewares.slash-step1.redirectregex.regex=^(https?://[^/]+/[a-z0-9_]+)$$"
+      - "traefik.http.middlewares.slash-step1.redirectregex.replacement=$${1}/"
+      - "traefik.http.middlewares.slash-step1.redirectregex.permanent=true"

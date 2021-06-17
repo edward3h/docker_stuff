@@ -1,0 +1,19 @@
+http:
+  services:
+    sensors:
+      loadBalancer:
+        servers:
+          - url: "http://expunge:8888/"
+  routers:
+    sensors:
+      service: sensors
+      rule: "PathPrefix(`/heat/sensors`) && Host(`eternal.local`, `eternal`)"
+      entryPoints:
+        - web
+      middlewares:
+        - sensorpath
+      priority: 9000
+  middlewares:
+    sensorpath:
+      replacePath:
+        path: "/api/sensors"

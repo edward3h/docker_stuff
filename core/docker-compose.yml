@@ -50,9 +50,10 @@ services:
         ports:
             - 80:80
             - 443:443
-            - 8082:8082
+            - 8081:8081
         restart: unless-stopped
         volumes:
             - ./data/conf/traefik/acme:/etc/traefik/acme
             - ./data/conf/traefik/traefik.yml:/traefik.yml
+            - ./data/conf/traefik/dynamic:/dynamic
             - ./data/volumes/traefik/tmp:/tmp

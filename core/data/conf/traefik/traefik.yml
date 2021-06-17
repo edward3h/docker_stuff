@@ -8,10 +8,10 @@ certificatesResolvers:
       dnsChallenge:
         provider: dreamhost
       email: jaq@ethelred.org
-      storage: acme.json
+      storage: /etc/traefik/acme/acme.json
 entryPoints:
   dashboard:
-    address: :8082
+    address: :8081
   web:
     address: :80
   web-secure:
@@ -23,23 +23,6 @@ providers:
     endpoint: tcp://dockerproxy:2375
     exposedByDefault: false
     network: docker_bus
-http:
-  services:
-    sensors:
-      loadBalancer:
-        servers:
-          - url: "http://expunge:8888/api/"
-  routers:
-    sensors:
-      service: sensors
-      rule: "PathPrefix(`/heat/sensors`) && Host(`eternal.local`, `eternal`)"
-      entryPoints:
-        - web
-      middlewares:
-        - stripheatsensors
-      priority: 9000
-  middlewares:
-    stripheatsensors:
-      stripPrefix:
-        prefixes:
-          - "/heat/sensors"
+  file:
+    directory: /dynamic
+    watch: true
