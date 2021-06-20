@@ -57,3 +57,52 @@ services:
             - ./data/conf/traefik/traefik.yml:/traefik.yml
             - ./data/conf/traefik/dynamic:/dynamic
             - ./data/volumes/traefik/tmp:/tmp
+
+    # cron:
+    #     image: mcuadros/ofelia:latest
+    #     command: daemon --docker
+    #     volumes:
+    #         - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    traefik-forward-auth:
+        image: thomseddon/traefik-forward-auth:2.1.0
+        env_file: auth.env
+        networks:
+          - web_bus
+        restart: "unless-stopped"
+        labels: # you only need these if you're using an auth host
+        # traefik
+        - traefik.enable=true
+        - traefik.docker.network=web_bus
+
+        # traefikv2
+        - "traefik.http.routers.auth.rule=Host(`auth.ethelred.org`)"
+        - "traefik.http.routers.auth.entrypoints=web-secure"
+        - "traefik.http.routers.auth.tls=true"
+        # - "traefik.http.routers.auth.tls.domains[0].main=ethelred.org"
+        # - "traefik.http.routers.auth.tls.domains[0].sans=*.ethelred.org"        
+        - "traefik.http.routers.auth.tls.certresolver=default"
+        - "traefik.http.routers.auth.service=auth@docker"
+        - "traefik.http.services.auth.loadbalancer.server.port=4181"
+        - "traefik.http.middlewares.forward-auth.forwardauth.address=http://traefik-forward-auth:4181"
+        - "traefik.http.middlewares.forward-auth.forwardauth.trustForwardHeader=true"
+        - "traefik.http.middlewares.forward-auth.forwardauth.authResponseHeaders=X-Forwarded-User"
+        - "traefik.http.routers.auth.middlewares=forward-auth"
+
+      # This simply validates that traefik forward authentication is working
+    whoami:
+        image: containous/whoami
+        networks:
+            - web_bus   
+        restart: "unless-stopped"
+        labels:
+            # traefik
+            - traefik.enable=true
+            - traefik.docker.network=web_bus
+
+            # traefikv2
+            - "traefik.http.routers.whoami.rule=Host(`whoami.ethelred.org`)"
+            - "traefik.http.routers.whoami.entrypoints=web-secure"
+            - "traefik.http.routers.whoami.middlewares=forward-auth" # this line enforces traefik-forward-auth  
+            - "traefik.http.routers.whoami.tls=true"
+            - "traefik.http.routers.whoami.tls.certresolver=default"
