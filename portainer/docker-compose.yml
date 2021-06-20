@@ -1,0 +1,37 @@
+version: '3.9'
+
+networks: 
+    web_bus:
+      external: true
+
+services: 
+    portainer:
+        image: portainer/portainer-ce
+        command: -H unix:///var/run/docker.sock
+        restart: "unless-stopped"
+        networks: 
+          - web_bus
+        volumes: 
+            - /var/run/docker.sock:/var/run/docker.sock
+            - portainer_data:/data 
+        labels:
+            # Frontend
+            - "traefik.enable=true"      
+            - "traefik.docker.network=web_bus"
+            - "traefik.http.routers.frontend.rule=PathPrefix(`/portainer`) && Host(`eternal.local`, `eternal`)"
+            - "traefik.http.routers.frontend.entrypoints=web"
+            - "traefik.http.services.frontend.loadbalancer.server.port=9000"
+            - "traefik.http.routers.frontend.service=frontend"      
+            - "traefik.http.middlewares.stripportainer.stripprefix.prefixes=/portainer"
+            - "traefik.http.routers.frontend.middlewares=stripportainer"
+            # - "traefik.http.routers.frontend.tls.certresolver=leresolver"
+    
+            # # Edge
+            # - "traefik.http.routers.edge.rule=Host(`edge.yourdomain.com`)"
+            # - "traefik.http.routers.edge.entrypoints=websecure"
+            # - "traefik.http.services.edge.loadbalancer.server.port=8000"
+            # - "traefik.http.routers.edge.service=edge"
+            # - "traefik.http.routers.edge.tls.certresolver=leresolver"
+             
+volumes:
+    portainer_data:

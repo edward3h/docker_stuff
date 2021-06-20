@@ -8,3 +8,6 @@ nextcloud/mail.env
 nextcloud/store.env
 services/.mariadb.env
 core/data/conf/traefik/acme/acme.json
+core/auth.env
+mealie/mealie.env
+tvchaos/.env
