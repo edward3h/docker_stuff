@@ -1,0 +1,41 @@
+version: '3.9'
+
+networks: 
+    # service_bus:
+    #   external: true
+    web_bus:
+      external: true
+
+services: 
+    tvchaos:
+        image: ghcr.io/edward3h/tvchaos:v1.0.9-alpha
+        env_file: 
+            - .env
+        environment: 
+            - ASSET_PATH=/tvchaos
+        labels:
+            - "traefik.enable=true"
+            - "traefik.docker.network=web_bus"
+            - "com.centurylinklabs.watchtower.enable=true"
+            - "traefik.http.routers.tvchaos.entrypoints=web"
+            - "traefik.http.routers.tvchaos.rule=PathPrefix(`/tvchaos`) && Host(`eternal.local`, `eternal`)"
+            # - "traefik.http.middlewares.stripp.stripprefix.prefixes=/tvchaos"
+            - "traefik.http.routers.tvchaos.middlewares=slash-step1"      
+            - "traefik.http.routers.tvchaos.priority=100"
+            # slash_step1 | Add missing trailing slash
+            - "traefik.http.middlewares.slash-step1.redirectregex.regex=^(https?://[^/]+/[a-z0-9_]+)$$"
+            - "traefik.http.middlewares.slash-step1.redirectregex.replacement=$${1}/"
+            - "traefik.http.middlewares.slash-step1.redirectregex.permanent=true"
+        networks: 
+            - web_bus
+        restart: unless-stopped
+
+    scheduler:
+        build: 
+            context: ./shittyscheduler
+        restart: "unless-stopped"
+        environment:
+            SLEEP: '5m'
+        command: ["docker", "exec", "tvchaos_tvchaos_1", "cronsteps.sh"]
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
